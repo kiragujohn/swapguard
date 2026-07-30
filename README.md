@@ -56,27 +56,7 @@ Standard CAMARA Open Gateway APIs restrict raw hardware counters and PII due to 
 
 ---
 
-## 🧮 Mathematical Methodology & Feature Formulations
-
-SwapGuard transforms raw JSON telemetry into normalized mathematical vectors for real-time inference.
-
-### 1. Logarithmic Tenure Decay ($\mathcal{T}_{	ext{risk}}$)
-Applies a non-linear logarithmic transformation to subscriber activation tenure ($t$ days). Risk decays rapidly after 30 days, creating a smooth scale for account age:
-
-$$\mathcal{T}_{	ext{risk}} = rac{1}{1 + \ln(1 + t)}$$
-
-### 2. Multi-Tier Swap Recency ($\mathcal{S}_{	ext{recency}}$)
-Evaluates prior SIM swap history using dual-resolution temporal flags (within 7 days vs. 30 days):
-
-$$\mathcal{S}_{	ext{recency}} = (0.20 \cdot \mathbb{I}_{t_{	ext{swap}} < 30}) + (0.30 \cdot \mathbb{I}_{t_{	ext{swap}} < 7})$$
-
-### 3. Haversine Spatial Distance Mismatch ($\mathcal{D}_{	ext{geo}}$)
-Calculates physical distance in kilometers between the target's registered address $(\phi_1, \lambda_1)$ and requesting cell tower location $(\phi_2, \lambda_2)$:
-
-$$\mathcal{D}_{	ext{geo}} = 2 R \cdot  rcsin\left( \sqrt{ \sin^2\left(rac{\Delta \phi}{2}
-ight) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(rac{\Delta \lambda}{2}
-ight) } 
-ight)$$
+🧮 Mathematical Methodology & Feature FormulationsSwapGuard transforms raw JSON telemetry into normalized mathematical vectors for real-time inference.1. Logarithmic Tenure Decay ($\mathcal{T}_{\text{risk}}$)Applies a non-linear logarithmic transformation to subscriber activation tenure ($t$ days). Risk decays rapidly after 30 days, creating a smooth scale for account age:$$\mathcal{T}_{\text{risk}} = \frac{1}{1 + \ln(1 + t)}$$2. Multi-Tier Swap Recency ($\mathcal{S}_{\text{recency}}$)Evaluates prior SIM swap history using dual-resolution temporal flags (within 7 days vs. 30 days):$$\mathcal{S}_{\text{recency}} = (0.20 \cdot \mathbb{I}_{t_{\text{swap}} < 30}) + (0.30 \cdot \mathbb{I}_{t_{\text{swap}} < 7})$$3. Haversine Spatial Distance Mismatch ($\mathcal{D}_{\text{geo}}$)Calculates physical distance in kilometers between the subscriber's registered address $(\phi_1, \lambda_1)$ and requesting device location $(\phi_2, \lambda_2)$:$$\mathcal{D}_{\text{geo}} = 2 R \cdot \arcsin\left( \sqrt{ \sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right) } \right)$$
 
 ### 4. Continuous Anomaly Score Normalization ($R$)
 Isolation Forest decision function outputs $s(x)$ are mapped to a bounded risk score within $[0.0, 1.0]$:
