@@ -122,7 +122,7 @@ $$\mathcal{D}_{\text{geo}} = 2 R \cdot \arcsin\left( \sqrt{ \sin^2\left(\frac{\D
 
 Combines weighted behavioral anomalies into a baseline risk index before machine learning inference:
 
-$$\mathcal{P} = 0.25 \cdot \mathcal{T}_{\text{risk}} + 0.20 \cdot \mathbb{I}_{\text{recent\_swap}} + 0.20 \cdot \mathbb{I}_{\text{device\_velocity}} + 0.15 \cdot \mathbb{I}_{\text{imei\_shared}} + 0.20 \cdot \mathbb{I}_{\text{channel\_risk}}$$
+The global risk probability (\(\mathcal{P}\)) is calculated using a weighted linear combination of risk indicators:\(\mathcal{P}=0.25\cdot \mathcal{T}_{\text{risk}}+0.20\cdot \mathbb{I}_{\text{recent\_swap}}+0.20\cdot \mathbb{I}_{\text{device\_velocity}}+0.15\cdot \mathbb{I}_{\text{imei\_shared}}+0.20\cdot \mathbb{I}_{\text{channel\_risk}}\)
 
 **5. Continuous Anomaly Score Normalization ($R$)**
 
