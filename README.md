@@ -122,7 +122,57 @@ $$\mathcal{D}_{\text{geo}} = 2 R \cdot \arcsin\left( \sqrt{ \sin^2\left(\frac{\D
 
 Combines weighted behavioral anomalies into a baseline risk index before machine learning inference:
 
-The global risk probability (\(\mathcal{P}\)) is calculated using a weighted linear combination of risk indicators:\(\mathcal{P}=0.25\cdot \mathcal{T}_{\text{risk}}+0.20\cdot \mathbb{I}_{\text{recent\_swap}}+0.20\cdot \mathbb{I}_{\text{device\_velocity}}+0.15\cdot \mathbb{I}_{\text{imei\_shared}}+0.20\cdot \mathbb{I}_{\text{channel\_risk}}\)
+### Risk Score Formula
+
+The global risk probability (
+
+Pscript cap P
+𝒫
+) is calculated using a weighted linear combination of risk indicators: 
+
+P=0.25⋅Trisk+0.20⋅Irecent_swap+0.20⋅Idevice_velocity+0.15⋅Iimei_shared+0.20⋅Ichannel_riskscript cap P equals 0.25 center dot script cap T sub r i s k end-sub plus 0.20 center dot double-struck cap I sub r e c e n t _ s w a p end-sub plus 0.20 center dot double-struck cap I sub d e v i c e _ v e l o c i t y end-sub plus 0.15 center dot double-struck cap I sub i m e i _ s h a r e d end-sub plus 0.20 center dot double-struck cap I sub c h a n n e l _ r i s k end-sub
+𝒫=0.25⋅𝒯risk+0.20⋅𝕀recent_swap+0.20⋅𝕀device_velocity+0.15⋅𝕀imei_shared+0.20⋅𝕀channel_risk
+ 
+
+### Variable Definitions
+
+VariableTypeWeightsDescription
+****
+
+Pscript cap P
+𝒫
+Output—Final calculated probability of risk (
+0
+
+≤𝒫
+
+≤1
+).
+****
+
+Triskscript cap T sub r i s k end-sub
+𝒯risk
+Continuous25%Trust score risk metric based on historical behavior.
+****
+
+Irecent_swapdouble-struck cap I sub r e c e n t _ s w a p end-sub
+𝕀recent_swap
+Indicator20%Binary flag (0 or 1) indicating a recent SIM or account swap.
+****
+
+Idevice_velocitydouble-struck cap I sub d e v i c e _ v e l o c i t y end-sub
+𝕀device_velocity
+Indicator20%Binary flag (0 or 1) indicating high-speed physical displacement.
+****
+
+Iimei_shareddouble-struck cap I sub i m e i _ s h a r e d end-sub
+𝕀imei_shared
+Indicator15%Binary flag (0 or 1) indicating the hardware ID is shared across accounts.
+****
+
+Ichannel_riskdouble-struck cap I sub c h a n n e l _ r i s k end-sub
+𝕀channel_risk
+Indicator20%Binary flag (0 or 1) indicating a high-risk connection channel (e.g., public VPN).
 
 **5. Continuous Anomaly Score Normalization ($R$)**
 
