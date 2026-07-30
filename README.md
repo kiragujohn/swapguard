@@ -55,9 +55,34 @@ Standard CAMARA Open Gateway APIs restrict raw hardware counters and PII due to 
 | **7. Requestor Velocity** | `requestor_swap_request_count_24h` | Measures repeated swap attempts initiated by the same requestor across short time windows. |
 
 ---
+## 🧮 Mathematical Methodology & Feature Formulations
 
-Logarithmic Tenure Decay ($\mathcal{T}_{\text{risk}}$):$$\mathcal{T}_{\text{risk}} = \frac{1}{1 + \ln(1 + t)}$$Multi-Tier Swap Recency ($\mathcal{S}_{\text{recency}}$):$$\mathcal{S}_{\text{recency}} = (0.20 \cdot \mathbb{I}_{t_{\text{swap}} < 30}) + (0.30 \cdot \mathbb{I}_{t_{\text{swap}} < 7})$$Haversine Spatial Distance Mismatch ($\mathcal{D}_{\text{geo}}$):$$\mathcal{D}_{\text{geo}} = 2 R \cdot \arcsin\left( \sqrt{ \sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right) } \right)$$Normalized Pre-Swap Risk Proxy ($\mathcal{P}$):$$\mathcal{P} = 0.25 \cdot \mathcal{T}_{\text{risk}} + 0.20 \cdot \mathbb{I}_{\text{recent\_swap}} + 0.20 \cdot \mathbb{I}_{\text{device\_velocity}} + 0.15 \cdot \mathbb{I}_{\text{imei\_shared}} + 0.20 \cdot \mathbb{I}_{\text{channel\_risk}}$$Continuous Anomaly Score Normalization ($R$):$$R(x) = 1.0 - \frac{s(x) - s_{\min}}{s_{\max} - s_{\min}}$$
+SwapGuard transforms raw JSON telemetry into normalized mathematical vectors for real-time inference.
 
+### 1. Logarithmic Tenure Decay ($\mathcal{T}_{\text{risk}}$)
+Applies a non-linear logarithmic transformation to subscriber activation tenure ($t$ days). Risk decays rapidly after 30 days, creating a smooth scale for account age:
+
+$$\mathcal{T}_{\text{risk}} = \frac{1}{1 + \ln(1 + t)}$$
+
+### 2. Multi-Tier Swap Recency ($\mathcal{S}_{\text{recency}}$)
+Evaluates prior SIM swap history using dual-resolution temporal flags (within 7 days vs. 30 days):
+
+$$\mathcal{S}_{\text{recency}} = (0.20 \cdot \mathbb{I}_{t_{\text{swap}} < 30}) + (0.30 \cdot \mathbb{I}_{t_{\text{swap}} < 7})$$
+
+### 3. Haversine Spatial Distance Mismatch ($\mathcal{D}_{\text{geo}}$)
+Calculates physical distance in kilometers between the target's registered address $(\phi_1, \lambda_1)$ and requesting cell tower location $(\phi_2, \lambda_2)$:
+
+$$\mathcal{D}_{\text{geo}} = 2 R \cdot \arcsin\left( \sqrt{ \sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right) } \right)$$
+
+### 4. Normalized Pre-Swap Risk Proxy ($\mathcal{P}$)
+Combines weighted behavioral anomalies into a baseline risk index before machine learning inference:
+
+$$\mathcal{P} = 0.25 \cdot \mathcal{T}_{\text{risk}} + 0.20 \cdot \mathbb{I}_{\text{recent\_swap}} + 0.20 \cdot \mathbb{I}_{\text{device\_velocity}} + 0.15 \cdot \mathbb{I}_{\text{imei\_shared}} + 0.20 \cdot \mathbb{I}_{\text{channel\_risk}}$$
+
+### 5. Continuous Anomaly Score Normalization ($R$)
+Isolation Forest decision function outputs $s(x)$ are mapped to a bounded risk score within $[0.0, 1.0]$:
+
+$$R(x) = 1.0 - \frac{s(x) - s_{\min}}{s_{\max} - s_{\min}}$$
 ---
 
 ## 📊 Self-Explanatory Field Mapping & Feature Engineering Matrix
