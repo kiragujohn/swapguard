@@ -100,35 +100,49 @@ Standard CAMARA Open Gateway APIs restrict raw hardware counters and PII due to 
 
 SwapGuard transforms raw JSON telemetry into normalized mathematical vectors for real-time inference.
 
-**1. Logarithmic Tenure Decay ($\mathcal{T}_{\text{risk}}$)**
+**1. Logarithmic Tenure Decay (`T_risk`)**
 
-Applies a non-linear logarithmic transformation to subscriber activation tenure ($t$ days). Risk decays rapidly after 30 days, creating a smooth scale for account age:
+Applies a non-linear logarithmic transformation to subscriber activation tenure (`t` days). Risk decays rapidly after 30 days, creating a smooth scale for account age:
 
-$$\mathcal{T}_{\text{risk}} = \frac{1}{1 + \ln(1 + t)}$$
+```
+T_risk = 1 / (1 + ln(1 + t))
+```
 
-**2. Multi-Tier Swap Recency ($\mathcal{S}_{\text{recency}}$)**
+**2. Multi-Tier Swap Recency (`S_recency`)**
 
 Evaluates prior SIM swap history using dual-resolution temporal flags (within 7 days vs. 30 days):
 
-$$\mathcal{S}_{\text{recency}} = (0.20 \cdot \mathbb{I}_{t_{\text{swap}} < 30}) + (0.30 \cdot \mathbb{I}_{t_{\text{swap}} < 7})$$
+```
+S_recency = (0.20 × I[t_swap < 30]) + (0.30 × I[t_swap < 7])
+```
 
-**3. Haversine Spatial Distance Mismatch ($\mathcal{D}_{\text{geo}}$)**
+**3. Haversine Spatial Distance Mismatch (`D_geo`)**
 
-Calculates physical distance in kilometers between the subscriber's registered address $(\phi_1, \lambda_1)$ and requesting device location $(\phi_2, \lambda_2)$:
+Calculates physical distance in kilometers between the subscriber's registered address `(φ1, λ1)` and requesting device location `(φ2, λ2)`:
 
-$$\mathcal{D}_{\text{geo}} = 2 R \cdot \arcsin\left( \sqrt{ \sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right) } \right)$$
+```
+D_geo = 2R × arcsin( √( sin²(Δφ/2) + cos(φ1)·cos(φ2)·sin²(Δλ/2) ) )
+```
 
-**4. Normalized Pre-Swap Risk Proxy ($\mathcal{P}$)**
+**4. Normalized Pre-Swap Risk Proxy (`P`)**
 
 Combines weighted behavioral anomalies into a baseline risk index before machine learning inference:
 
-$$\mathcal{P} = 0.25 \cdot \mathcal{T}_{\text{risk}} + 0.20 \cdot \mathbb{I}_{\text{recent\_swap}} + 0.20 \cdot \mathbb{I}_{\text{device\_velocity}} + 0.15 \cdot \mathbb{I}_{\text{imei\_shared}} + 0.20 \cdot \mathbb{I}_{\text{channel\_risk}}$$
+```
+P = 0.25 × T_risk
+  + 0.20 × I[recent_swap]
+  + 0.20 × I[device_velocity]
+  + 0.15 × I[imei_shared]
+  + 0.20 × I[channel_risk]
+```
 
-**5. Continuous Anomaly Score Normalization ($R$)**
+**5. Continuous Anomaly Score Normalization (`R`)**
 
-Isolation Forest decision function outputs $s(x)$ are mapped to a bounded risk score within $[0.0, 1.0]$:
+Isolation Forest decision function outputs `s(x)` are mapped to a bounded risk score within `[0.0, 1.0]`:
 
-$$R(x) = 1.0 - \frac{s(x) - s_{\min}}{s_{\max} - s_{\min}}$$
+```
+R(x) = 1.0 - (s(x) - s_min) / (s_max - s_min)
+```
 
 ---
 
@@ -143,7 +157,7 @@ $$R(x) = 1.0 - \frac{s(x) - s_{\min}}{s_{\max} - s_{\min}}$$
 | CAMARA SIM Swap API | `latestSimChange` (ISO 8601) | `days_since_last_swap`, `recent_swap_flag`, `very_recent_swap_flag` | **Prior Swap Recency**: Measures elapsed time since the subscriber's previous SIM change. Flagged 1 if a swap occurred within the last 30 days (`recent_swap_flag`) or 7 days (`very_recent_swap_flag`). High recency indicates potential account compromise or fraud velocity. |
 | CAMARA Location API | `area.center.latitude`, `area.center.longitude` | `geo_distance_km`, `geo_inconsistency_flag` | **Geographic Mismatch**: Measures physical distance (km) via the Haversine formula between the requesting device's current cell location and the subscriber's registered billing address. Flagged 1 if distance > 50 km. |
 | CAMARA Silent Auth API | `devicePhoneNumberVerified` | `silent_auth_failed` | **Possession Check**: Inverts network-level Silent Network Authentication status (0 if carrier verified device possession via header enrichment, 1 if auth failed or was bypassed). |
-| MNO CRM / Billing | `daysSinceMsisdnActivation` | `tenure_days`, `tenure_risk_score` | **Subscriber Tenure Risk**: Applies logarithmic decay $\frac{1}{1 + \ln(1 + t)}$ to line age ($t$). Newly activated SIM lines/accounts carry higher inherent risk than established long-term subscribers. |
+| MNO CRM / Billing | `daysSinceMsisdnActivation` | `tenure_days`, `tenure_risk_score` | **Subscriber Tenure Risk**: Applies logarithmic decay `1 / (1 + ln(1 + t))` to line age (`t`). Newly activated SIM lines/accounts carry higher inherent risk than established long-term subscribers. |
 | MNO EIR / HSS | `deviceCount` | `device_count_window`, `high_device_velocity` | **Hardware Switching Velocity**: Tracks the number of distinct IMEIs (handsets) associated with the line in the past 30 days. Flagged 1 if ≥ 3 devices were used, signaling SIM hopping. |
 | MNO EIR / HSS | `msisdnCount` | `imei_sharing_count`, `imei_shared_flag` | **IMEI Farming / Multi-SIM Flag**: Tracks how many distinct MSISDNs (phone numbers) have been attached to the requesting handset's IMEI. Flagged 1 if shared across multiple lines, indicating automated fraud hardware. |
 | Channel Metadata | `channel`, `bot_score`, `kba_only` | `request_channel`, `bot_score`, `kba_only_flag`, `channel_risk` | **Channel & Identity Risk**: Evaluates the entry point (chatbot, ivr, rpa, web_portal) and authentication strength. High bot scores (> 0.60) or reliance purely on Knowledge-Based Authentication (KBA) trigger high channel risk. |
