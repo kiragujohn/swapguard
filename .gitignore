@@ -1,0 +1,65 @@
+# ==========================================
+# 🛑 SWAPGUARD CRITICAL BLOCK: DATA & MODELS
+# ==========================================
+# Never commit large CSV datasets or heavy ML weights
+datasets/
+models/
+*.csv
+*.joblib
+*.pkl
+*.h5
+*.onnx
+
+# ==========================================
+# 📦 VIRTUAL ENVIRONMENTS & DEPENDENCIES
+# ==========================================
+.venv/
+venv/
+ENV/
+env/
+.env
+.venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ==========================================
+# 🐍 PYTHON SYSTEM BYPRODUCTS
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==========================================
+# ⚙️ OS & IDE SPECIFIC JUNK
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# VS Code specific settings that shouldn't be shared
+.vscode/
+!.vscode/extensions.json
+.history/
+generate_dataset.py
