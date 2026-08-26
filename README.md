@@ -50,7 +50,7 @@ Standardized CAMARA / Open Gateway APIs expose defined network capabilities rath
 
 ## 🔬 SwapGuard Feature Engineering Specification
 
-> 💡 **Crucial Architectural Concept: Target (Victim) vs. Requestor (Fraudster)**
+> 💡 **Crucial Architectural Concept: Target Subscriber vs. Requestor Context**
 > A target subscriber's historical account profile may appear low-risk even when the current SIM-swap request is being initiated through a different device, line, or channel. Evaluating only the target account's history can therefore miss risk indicators associated with the request itself.
 >
 > **SwapGuard expands the evaluation context:** Where those signals are available and authorized, it can analyze the **requestor's line (`requestor_originating_msisdn`)** and **requestor's device identifier (`requestor_hardware_imei`)** associated with the call, chat, or API request. These signals can help identify suspicious device reuse, recently activated lines, unusual request velocity, and other request-side anomalies.
