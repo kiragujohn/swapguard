@@ -3,9 +3,9 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](https://www.python.org/)
-[![CAMARA Compliant](https://img.shields.io/badge/Standard-GSMA_CAMARA-orange.svg)](https://camara-project.info/)
+[![CAMARA Aligned](https://img.shields.io/badge/Standard-GSMA_CAMARA_Aligned-orange.svg)](https://camara-project.info/)
 
-SwapGuard Community Edition is an open-source, pre-swap risk scoring middleware designed for Mobile Network Operators (MNOs) and telecom providers. It evaluates line-modification requests **at the exact moment of initiation** (pre-swap) to block unauthorized SIM swap takeovers before execution.
+SwapGuard Community Edition is an open-source, pre-swap risk-scoring middleware designed for Mobile Network Operators (MNOs) and telecom providers. It evaluates line-modification requests **at the point of initiation** (pre-swap) to support detection and mitigation of potentially unauthorized SIM-swap requests before execution.
 
 SwapGuard combines standardized GSMA Open Gateway / CAMARA-aligned network signals with authorized MNO and request-context telemetry to produce explainable, real-time Pre-Swap risk assessments.
 
@@ -23,7 +23,7 @@ The resulting assessment exposes the final risk score together with model-level 
 
 ## 🛠️ Architecture & Telemetry Data Flow
 
-Standard CAMARA Open Gateway APIs restrict raw hardware counters and PII due to strict privacy regulations. SwapGuard solves this by synthesizing northbound CAMARA signals with internal MNO core telemetry:
+Standardized CAMARA / Open Gateway APIs expose defined network capabilities rather than all internal carrier telemetry. SwapGuard's target architecture can combine applicable standardized signals with additional provider-authorized internal telemetry where available:
 
 ```text
 [ Customer SIM Swap Request ]
@@ -51,20 +51,20 @@ Standard CAMARA Open Gateway APIs restrict raw hardware counters and PII due to 
 ## 🔬 SwapGuard Feature Engineering Specification
 
 > 💡 **Crucial Architectural Concept: Target (Victim) vs. Requestor (Fraudster)**
-> Standard telco fraud checks often fail because they query the *victim's* line history. Because the victim is typically a loyal, multi-year subscriber, their profile appears completely low-risk—allowing the transaction to pass.
+> A target subscriber's historical account profile may appear low-risk even when the current SIM-swap request is being initiated through a different device, line, or channel. Evaluating only the target account's history can therefore miss risk indicators associated with the request itself.
 >
-> **SwapGuard flips this model:** It captures and analyzes the **Requestor's Line (`requestor_originating_msisdn`)** and **Requestor's Device Hardware (`requestor_hardware_imei`)** placing the call, chat, or API request. This actively exposes burner SIMs, SIM farming hardware, and rapid attack vectors.
+> **SwapGuard expands the evaluation context:** Where those signals are available and authorized, it can analyze the **requestor's line (`requestor_originating_msisdn`)** and **requestor's device identifier (`requestor_hardware_imei`)** associated with the call, chat, or API request. These signals can help identify suspicious device reuse, recently activated lines, unusual request velocity, and other request-side anomalies.
 
 ### 📊 Feature Categories Overview
 
 | Category | Features | Core Security Objective |
 | :--- | :--- | :--- |
 | **1. Channel Risk** | `originating_channel`, `automation_bot_score` | Detects non-human or automated attack vectors (Chatbot, IVR, RPA) that lack physical identity checks. |
-| **2. Requestor Identity** | `requestor_originating_msisdn`, `requestor_hardware_imei` | Captures the phone number and hardware ID of the line **placing the request** (the fraudster's burner SIM). |
+| **2. Requestor Identity** | `requestor_originating_msisdn`, `requestor_hardware_imei` | Represents the line and device associated with the request, where available and authorized. |
 | **3. Geospatial Risk** | `requestor_to_target_distance_km`, `target_home_registered_latitude/longitude` | Measures physical distance between the target's registered home address and where the requestor's cell signal originates. |
-| **4. Requestor Device History** | `unique_imeis_used_by_requestor_msisdn_30d` | Identifies a single requestor line hopping across multiple physical burner phones. |
-| **5. Requestor MSISDN History** | `unique_msisdns_used_by_requestor_imei_7d` | Uncovers "SIM Farming" hardware cycling through dozens of bulk prepaid SIM cards on a single device. |
-| **6. Requestor Account Age** | `requestor_sim_activation_age_days`, `requestor_sim_is_prepaid` | Flags newly activated burner SIMs used immediately for account takeover attacks. |
+| **4. Requestor Device History** | `unique_imeis_used_by_requestor_msisdn_30d` | Measures recent device reuse associated with the requesting line and can flag unusually high device-association velocity. |
+| **5. Requestor MSISDN History** | `unique_msisdns_used_by_requestor_imei_7d` | Measures how many mobile numbers were recently associated with the requesting device and can flag unusually high multi-line device reuse. |
+| **6. Requestor Account Age** | `requestor_sim_activation_age_days`, `requestor_sim_is_prepaid` | Evaluates whether the requesting line is newly activated or otherwise exhibits account-age characteristics relevant to risk. |
 | **7. Requestor Velocity** | `requestor_swap_request_count_24h` | Measures repeated swap attempts initiated by the same requestor across short time windows. |
 
 ---
@@ -111,7 +111,7 @@ $$\mathcal{D}_{\text{geo}} = 2 R \cdot \arcsin\left( \sqrt{ \sin^2\left(\frac{\D
 ### 4. Normalized Pre-Swap Risk Proxy ($\mathcal{P}$)
 Combines weighted behavioral anomalies into a baseline risk index before machine learning inference:
 
-$$\mathcal{P} = 0.25 \cdot \mathcal{T}_{\text{risk}} + 0.20 \cdot \mathbb{I}_{\text{recent\_swap}} + 0.20 \cdot \mathbb{I}_{\text{device\_velocity}} + 0.15 \cdot \mathbb{I}_{\text{imei\_shared}} + 0.20 \cdot \mathbb{I}_{\text{channel\_risk}}$$
+$$\mathcal{P} = 0.25\,\mathcal{T}_{\mathrm{risk}} + 0.20\,I_{\mathrm{recent\,swap}} + 0.20\,I_{\mathrm{device\,velocity}} + 0.15\,I_{\mathrm{imei\,shared}} + 0.20\,I_{\mathrm{channel\,risk}}$$
 
 ### 5. Continuous Anomaly Score Normalization ($R$)
 Isolation Forest decision function outputs $s(x)$ are mapped to a bounded risk score within $[0.0, 1.0]$:
@@ -164,7 +164,7 @@ The policy layer is reported separately through `policy_rules_triggered`, preser
 | **Requestor Identity** | `requestor_sim_activation_age_days` | `burner_sim_flag` | **Burner SIM Originator Check:** Measures how recently the *requesting* line was activated. Flagged `1` if age $< 3$ days. |
 | **Requestor Velocity** | `unique_imeis_used_by_requestor_msisdn_30d` | `high_device_velocity` | **Hardware Hopping:** Tracks IMEIs attached to the requesting line over 30 days. Flagged `1` if $\ge 3$. |
 | **Requestor Velocity** | `unique_msisdns_used_by_requestor_imei_7d` | `imei_farming_flag` | **SIM Farming Detection:** Tracks MSISDNs attached to the requesting handset's IMEI over 7 days. Flagged `1` if $\ge 3$. |
-| **Requestor Location** | `requestor_cell_latitude/longitude` | `geo_distance_km` | **Geographic Mismatch:** Calculates distance to target registered home address. Flagged `1` if $> 50	ext{ km}$. |
+| **Requestor Location** | `requestor_cell_latitude/longitude` | `geo_distance_km` | **Geographic Mismatch:** Calculates distance to target registered home address. Flagged `1` if $> 50\,\mathrm{km}$. |
 | **Channel Metadata** | `originating_channel`, `automation_bot_score` | `channel_risk` | **Automation Risk:** Evaluates origin (`chatbot`, `ivr`, `rpa_api`) and bot scores ($>0.70$). |
 
 ---
@@ -261,22 +261,22 @@ The engine separates model evidence from the final policy-aware assessment:
 
 ## 🟢 Risk Score Output Banding
 
-MNO Policy Decision Points (PDP) map SwapGuard continuous risk scores (`0.00` – `1.00`) directly to authorization actions:
+Illustrative MNO policy decision points can map SwapGuard continuous risk scores (`0.00` – `1.00`) to operator-defined review or authentication actions. The carrier retains authority over the final operational decision:
 
 * 🔴 **High Risk Score (`0.80` – `1.00`)**
   > **Telemetry Profile:** Channel = `chatbot` | Distance = `4,300 km` | `unique_msisdns_used_by_requestor_imei_7d` = `6` | `requestor_sim_activation_age_days` = `0.2`
-  * **Risk Assessment:** High probability of automated, credential-stuffing, or fraud-ring line takeover.
-  * **Recommended Action:** **BLOCK** transaction or require biometric in-person ID verification.
+  * **Risk Assessment:** Elevated risk based on the demonstrated combination of behavioral, device, geographic, and policy indicators.
+  * **Recommended Action:** **HOLD OR MANUAL REVIEW**, or require additional identity verification under the operator's approved controls.
 
 * 🟠 **Medium Risk Score (`0.40` – `0.79`)**
   > **Telemetry Profile:** Channel = `web_portal` | Distance = `150 km` | `unique_imeis_used_by_requestor_msisdn_30d` = `3`
   * **Risk Assessment:** Moderate behavioral anomaly.
-  * **Recommended Action:** **STEP-UP** authentication via SMS OTP or push notification.
+  * **Recommended Action:** **STEP-UP** authentication using an operator-approved additional verification method.
 
 * 🟢 **Low Risk Score (`0.00` – `0.39`)**
   > **Telemetry Profile:** Channel = `mobile_app` | Distance = `< 5 km` | `unique_msisdns_used_by_requestor_imei_7d` = `1` | `requestor_sim_activation_age_days` = `730`
   * **Risk Assessment:** Standard legitimate subscriber pattern.
-  * **Recommended Action:** **ALLOW** automated execution.
+  * **Recommended Action:** **ALLOW WITH STANDARD CONTROLS**, subject to the operator's approved provisioning and fraud-control policies.
 
 ---
 
@@ -389,11 +389,11 @@ Apache Camel or comparable orchestration technology can later aggregate multiple
 ## 📄 License & Standards Compliance
 
 * **License:** [Apache License 2.0](LICENSE)
-* **Copyright & Ownership:** Wahi Payment Systems LLC
+* **Copyright:** © John Kiragu Njoroge
 * **Standards Direction:** GSMA Open Gateway / CAMARA-aligned network API integration. Relevant API specifications are implemented where applicable; formal certification is not claimed unless separately documented.
 * **Model Architecture:** Isolation Forest + Random Forest + Hybrid Fusion + Policy Engine
 * **Primary Scope:** Open-source Pre-Swap SIM/eSIM fraud risk assessment
-* **Author / Maintainer:** John Kiragu Njoroge (Wahi Payment Systems LLC)
+* **Author / Maintainer:** John Kiragu Njoroge
 
 
 ---
